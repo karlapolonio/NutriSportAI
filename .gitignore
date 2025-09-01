@@ -1,0 +1,7 @@
+# Backend
+backend/nutrisportai/
+backend/__pycache__/
+backend/.env
+
+# Mac / System files
+.DS_Store
