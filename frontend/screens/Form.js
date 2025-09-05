@@ -1,4 +1,4 @@
-import { Text, TextInput, StyleSheet, View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { Text, TextInput, StyleSheet, View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Modal, Alert, Button } from 'react-native';
 import { useState } from 'react';
 
 export default function Form() {
@@ -7,7 +7,6 @@ export default function Form() {
     height: '',
     weight: '',
     gender: '',
-    bmi: '',
     activityLevel: '',
     sport: '',
     goal: '',
@@ -30,7 +29,51 @@ export default function Form() {
   const dietTypeList = ['Omnivore', 'Vegetarian', 'Vegan', 'Pescatarian', 'Ketogenic', 'Paleo', 'Mediterranean', 'Low Carb', 'Intermittent Fasting']
   const [showDietDD, setShowDietDD] = useState(false);
 
-  
+  const allergyOptions = [ 'Nuts', 'Dairy', 'Gluten', 'Shellfish', 'Soy', 'Eggs', 'Fish', 'Sesame'];
+
+  const toggleAllergy = (allergy) => {
+    setFormData(prev => {
+      let newAllergies = [...prev.allergies];
+      if (prev.allergies.includes(allergy)) {
+        newAllergies = newAllergies.filter(item => item !== allergy);
+      } else {
+        newAllergies.push(allergy);
+      }
+      return { ...prev, allergies: newAllergies };
+    });
+  };
+
+  const handleSubmit = () => {
+    const emptyFields = [];
+    const numericFields = [];
+
+    // Check empty fields (except allergies)
+    for (const key in formData) {
+      if (key !== 'allergies' && !formData[key]) {
+        emptyFields.push(key);
+      }
+    }
+
+    // Check if age, height, weight are numeric
+    ['age', 'height', 'weight'].forEach((field) => {
+      if (formData[field] && isNaN(Number(formData[field]))) {
+        numericFields.push(field);
+      }
+    });
+
+    if (emptyFields.length > 0 || numericFields.length > 0) {
+      let msg = '';
+      if (emptyFields.length > 0) {
+        msg += `Please fill out: ${emptyFields.join(', ')}.\n`;
+      }
+      if (numericFields.length > 0) {
+        msg += `These fields must be numeric: ${numericFields.join(', ')}.`;
+      }
+      Alert.alert('Form Error', msg);
+    } else {
+      Alert.alert('Form Submitted', JSON.stringify(formData, null, 2));
+    }
+  }
 
   return (
     <KeyboardAvoidingView
@@ -38,7 +81,7 @@ export default function Form() {
       keyboardVerticalOffset={100}
       style={{ flex: 1, padding: 20, backgroundColor: '#fff' }}
     >
-        <ScrollView contentContainerStyle={{ flexGrow: 1  }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1  }} showsVerticalScrollIndicator={false}>
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.formTitle}>Form</Text>
@@ -49,21 +92,39 @@ export default function Form() {
 
             {/* Row 1: Age & Height */}
             <View style={styles.row}>
-              <View style={styles.inputGroup}>
+                <View style={styles.inputGroup}>
                   <Text style={styles.label}>Age</Text>
-                  <TextInput style={styles.input} placeholder="25" keyboardType="numeric" />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="25"
+                    keyboardType="numeric"
+                    value={formData.age}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, age: text }))}
+                  />
               </View>
               <View style={styles.inputGroup}>
                   <Text style={styles.label}>Height (cm)</Text>
-                  <TextInput style={styles.input} placeholder="175" keyboardType="numeric" />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="175"
+                    keyboardType="numeric"
+                    value={formData.height}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, height: text }))}
+                  />
               </View>
             </View>
 
             {/* Row 2: Weight & Gender */}
             <View style={styles.row}>
-              <View style={styles.inputGroup}>
+                <View style={styles.inputGroup}>
                   <Text style={styles.label}>Weight (kg)</Text>
-                  <TextInput style={styles.input} placeholder="70" keyboardType="numeric" />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="70"
+                    keyboardType="numeric"
+                    value={formData.weight}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, weight: text }))}
+                  />
               </View>
 
               <View style={styles.inputGroup}>
@@ -138,11 +199,49 @@ export default function Form() {
                 </TouchableOpacity>
               </View>
             </View>
-            
 
+            {/* Allergies Checkboxes */}
+            <View style={styles.fullRow}>
+              <View style={styles.inputGroup2}>
+                <Text style={styles.label}>Food Allergies/Intolerances (if any):</Text>
+                <View style={styles.checkboxContainer}>
+                  <View style={styles.checkboxGrid}>
+                    {allergyOptions.map((allergy) => (
+                      <TouchableOpacity
+                        key={allergy}
+                        style={styles.checkboxRow}
+                        onPress={() => toggleAllergy(allergy)}
+                      >
+                        <View
+                          style={[
+                            styles.checkbox,
+                            formData.allergies.includes(allergy) && styles.checkboxChecked
+                          ]}
+                        >
+                          {formData.allergies.includes(allergy) && (
+                            <Text style={styles.checkmark}>✓</Text>
+                          )}
+                        </View>
+                        <Text style={styles.checkboxLabel}>{allergy}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Submit Button */}
+            <View style={{ marginVertical: 20 }}>
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={() => handleSubmit()}
+              >
+                <Text style={styles.submitButtonText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
         </ScrollView>
 
-{/* ======================================================================================================================== */}
+{/* ================================================================================================================================================================ */}
 
         {/* Modal Gender */}
         <Modal visible={showGenderDD} transparent={true}>
@@ -316,12 +415,11 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 25,
   },
   fullRow: {
-    flexDirection: 'row',
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 25,
   },
   inputGroup: {
     width: '48%',
@@ -330,17 +428,39 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   label: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 6,
+    color: '#333',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
-    padding: 12,
+    paddingHorizontal: 12,
     height: 48,
     fontSize: 14,
+    color: '#333',
+    backgroundColor: '#fff',
+  },
+  dropdownButton: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 48,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  dropdownButtonText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  dropdownArrow: {
+    fontSize: 14,
+    color: '#666',
   },
   modalOverlay: {
     flex: 1,
@@ -357,28 +477,10 @@ const styles = StyleSheet.create({
   },
   modalCloseButton: {
     marginTop: 10,
-  },  
-  dropdownButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    height: 48,
-    padding: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  dropdownButtonText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  dropdownArrow: {
-    fontSize: 12,
-    color: '#666',
   },
   dropdownOption: {
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
     backgroundColor: '#fff',
@@ -386,5 +488,57 @@ const styles = StyleSheet.create({
   dropdownOptionText: {
     fontSize: 14,
     color: '#333',
+  },
+  checkboxContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#fff',
+  },
+  checkboxGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '48%',
+    marginBottom: 12,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    borderRadius: 4,
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#007bff',
+    borderColor: '#007bff',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: '#333',
+  },
+  submitButton: {
+    backgroundColor: '#01070cff',
+    paddingVertical: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
