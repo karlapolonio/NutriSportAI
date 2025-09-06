@@ -1,11 +1,11 @@
-import Form from './screens/Form';
+import Main from './screens/Main';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function App() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-        <Form />
+        <Main />
       </SafeAreaView>
     </SafeAreaProvider>
   );
